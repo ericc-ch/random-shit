@@ -1,0 +1,1 @@
+- **wordcount.ts** — Count words in text using `Intl.Segmenter`
