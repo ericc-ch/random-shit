@@ -2,7 +2,7 @@
  * Local analytics dashboard for OpenCode SQLite (`opencode.db`).
  *
  * Usage:
- *   deno run --allow-read --allow-env --allow-net opencode-dashboard.tsx
+ *   deno run --allow-read --allow-env --allow-net --allow-run --allow-sys=osRelease,uid opencode-dashboard.tsx
  *
  * Optional:
  *   OPENCODE_DB=/path/to/opencode.db
@@ -10,6 +10,7 @@
  */
 import { DatabaseSync } from "node:sqlite";
 import { type Context, Hono } from "@hono/hono";
+import open from "open";
 
 const portEnv = Deno.env.get("PORT");
 const parsedPort = portEnv === undefined || portEnv === ""
@@ -554,6 +555,9 @@ app.notFound((c) => c.text("Not found", 404));
 
 const server = Deno.serve({ port: listenPort }, app.fetch);
 
-console.error(
-  `OpenCode analytics → http://127.0.0.1:${server.addr.port}/  (${dbPath})`,
-);
+const dashboardUrl = `http://127.0.0.1:${server.addr.port}/`;
+console.error(`OpenCode analytics → ${dashboardUrl}  (${dbPath})`);
+void open(dashboardUrl).catch((err) => {
+  const msg = err instanceof Error ? err.message : String(err);
+  console.error(`Could not open browser: ${msg}`);
+});

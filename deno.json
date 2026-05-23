@@ -7,6 +7,7 @@
     "jsxImportSource": "@hono/hono/jsx"
   },
   "imports": {
-    "@hono/hono": "jsr:@hono/hono@^4.12.18"
+    "@hono/hono": "jsr:@hono/hono@^4.12.18",
+    "open": "npm:open@^11.0.0"
   }
 }

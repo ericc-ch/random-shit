@@ -3,13 +3,14 @@
  * `~/.cursor/projects` (agent transcript JSONL + filesystem metadata).
  *
  * Usage:
- *   deno run --allow-read --allow-env --allow-net cursor-projects-dashboard.tsx
+ *   deno run --allow-read --allow-env --allow-net --allow-run --allow-sys=osRelease,uid cursor-projects-dashboard.tsx
  *
  * Optional:
  *   CURSOR_PROJECTS_DIR=/path/to/.cursor/projects
  *   PORT=<n>   (omit for a random free port)
  */
 import { type Context, Hono } from "@hono/hono";
+import open from "open";
 
 const portEnv = Deno.env.get("PORT");
 const parsedPort = portEnv === undefined || portEnv === ""
@@ -571,6 +572,9 @@ app.notFound((c) => c.text("Not found", 404));
 
 const server = Deno.serve({ port: listenPort }, app.fetch);
 
-console.error(
-  `Cursor projects analytics → http://127.0.0.1:${server.addr.port}/  (${projectsRoot})`,
-);
+const dashboardUrl = `http://127.0.0.1:${server.addr.port}/`;
+console.error(`Cursor projects analytics → ${dashboardUrl}  (${projectsRoot})`);
+void open(dashboardUrl).catch((err) => {
+  const msg = err instanceof Error ? err.message : String(err);
+  console.error(`Could not open browser: ${msg}`);
+});
