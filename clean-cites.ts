@@ -12,7 +12,10 @@ function cleanCites(text: string): string {
   // Remove cite_start and cite: XX (or cite: XX, YY, ZZ) markers
   const cleaned = text.replace(/\[\s*cite_start\s*\]|\[\s*cite:\s*\d+(?:\s*,\s*\d+)*\s*\]/g, "");
   // Clean up extra whitespace (multiple spaces, tabs, etc.)
-  return cleaned.replace(/[ \t]+/g, " ").replace(/\n{3,}/g, "\n\n").trim();
+  return cleaned
+    .replace(/[ \t]+/g, " ")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
 }
 
 async function main() {
@@ -23,8 +26,8 @@ async function main() {
       describe: "Text to clean cite blocks from",
     })
     .usage("$0 [text]")
-    .example('$0 "[cite_start]Hello world[cite: 42]"', 'Clean cite blocks from text')
-    .example('cat text.txt | $0', "Clean cite blocks from stdin")
+    .example('$0 "[cite_start]Hello world[cite: 42]"', "Clean cite blocks from text")
+    .example("cat text.txt | $0", "Clean cite blocks from stdin")
     .help();
 
   const argv: ArgumentsCamelCase<CliOptions> = await yargsInstance.parseAsync();

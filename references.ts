@@ -29,11 +29,7 @@ const existsSync = (path: string) => {
   }
 };
 
-const run = (
-  command: string,
-  args: ReadonlyArray<string>,
-  cwd = projectRoot,
-) => {
+const run = (command: string, args: ReadonlyArray<string>, cwd = projectRoot) => {
   const { code, success } = new Deno.Command(command, {
     args: [...args],
     cwd,
@@ -59,11 +55,7 @@ for (const repository of repositories) {
     run("git", ["pull", "--ff-only"], repositoryPath);
   } else {
     console.log(`Cloning ${repository.name}...`);
-    run(
-      "git",
-      ["clone", "--depth", "1", repository.url, repository.directory],
-      referencesDir,
-    );
+    run("git", ["clone", "--depth", "1", repository.url, repository.directory], referencesDir);
   }
 }
 
@@ -71,8 +63,6 @@ console.log("");
 console.log("All reference repositories are up to date!");
 console.log("");
 console.log("Repositories:");
-for (
-  const entry of [...Deno.readDirSync(referencesDir)].map((e) => e.name).sort()
-) {
+for (const entry of [...Deno.readDirSync(referencesDir)].map((e) => e.name).sort()) {
   console.log(entry);
 }

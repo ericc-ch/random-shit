@@ -13,14 +13,10 @@ import { type Context, Hono } from "@hono/hono";
 import open from "open";
 
 const portEnv = Deno.env.get("PORT");
-const parsedPort = portEnv === undefined || portEnv === ""
-  ? 0
-  : Number(portEnv);
-const listenPort = Number.isFinite(parsedPort) && parsedPort >= 0
-  ? parsedPort
-  : 0;
-const projectsRoot = Deno.env.get("CURSOR_PROJECTS_DIR") ??
-  `${Deno.env.get("HOME") ?? ""}/.cursor/projects`;
+const parsedPort = portEnv === undefined || portEnv === "" ? 0 : Number(portEnv);
+const listenPort = Number.isFinite(parsedPort) && parsedPort >= 0 ? parsedPort : 0;
+const projectsRoot =
+  Deno.env.get("CURSOR_PROJECTS_DIR") ?? `${Deno.env.get("HOME") ?? ""}/.cursor/projects`;
 
 function utcDayFromMs(ms: number) {
   return new Date(ms).toISOString().slice(0, 10);
@@ -107,25 +103,17 @@ async function scanJsonlFile(path: string) {
     parsedLines,
     birthMs,
     modMs,
-    isSubagent: path.includes(`${"agent-transcripts"}/`) &&
-      path.includes("/subagents/"),
+    isSubagent: path.includes(`${"agent-transcripts"}/`) && path.includes("/subagents/"),
   };
 }
 
-function bumpDaySlug(
-  map: Map<string, number>,
-  day: string,
-  slug: string,
-  delta = 1,
-) {
+function bumpDaySlug(map: Map<string, number>, day: string, slug: string, delta = 1) {
   const k = `${day}\t${slug}`;
   map.set(k, (map.get(k) ?? 0) + delta);
 }
 
 function addUtcDay(isoDay: string, delta: number) {
-  return new Date(Date.parse(`${isoDay}T00:00:00Z`) + delta * 86400000)
-    .toISOString()
-    .slice(0, 10);
+  return new Date(Date.parse(`${isoDay}T00:00:00Z`) + delta * 86400000).toISOString().slice(0, 10);
 }
 
 function spreadRequestsAcrossDays(
@@ -179,9 +167,7 @@ function mapToProjectDaySeries(map: Map<string, number>) {
     });
   }
   rows.sort((a, b) =>
-    a.day === b.day
-      ? a.project_id.localeCompare(b.project_id)
-      : a.day.localeCompare(b.day)
+    a.day === b.day ? a.project_id.localeCompare(b.project_id) : a.day.localeCompare(b.day),
   );
   return rows;
 }
@@ -251,14 +237,7 @@ async function loadAnalytics() {
               considerDay(modDay);
               bumpDaySlug(sessionsMap, birthDay, slug, 1);
               const req = m.user + m.tool;
-              spreadRequestsAcrossDays(
-                birthDay,
-                modDay,
-                req,
-                slug,
-                requestsMap,
-                considerDay,
-              );
+              spreadRequestsAcrossDays(birthDay, modDay, req, slug, requestsMap, considerDay);
             } catch (e) {
               const msg = e instanceof Error ? e.message : String(e);
               scanErrors.push(`${p}: ${msg}`);
@@ -285,14 +264,7 @@ async function loadAnalytics() {
                 considerDay(birthDay);
                 considerDay(modDay);
                 const req = m.user + m.tool;
-                spreadRequestsAcrossDays(
-                  birthDay,
-                  modDay,
-                  req,
-                  slug,
-                  requestsMap,
-                  considerDay,
-                );
+                spreadRequestsAcrossDays(birthDay, modDay, req, slug, requestsMap, considerDay);
               } catch (e) {
                 const msg = e instanceof Error ? e.message : String(e);
                 scanErrors.push(`${sp}: ${msg}`);
@@ -314,12 +286,8 @@ async function loadAnalytics() {
     calendarSpanDays = Math.floor((b - a) / 86400000) + 1;
   }
 
-  const activeSessionDays = new Set(
-    [...sessionsMap.keys()].map((k) => k.split("\t")[0]),
-  ).size;
-  const activeRequestDays = new Set(
-    [...requestsMap.keys()].map((k) => k.split("\t")[0]),
-  ).size;
+  const activeSessionDays = new Set([...sessionsMap.keys()].map((k) => k.split("\t")[0])).size;
+  const activeRequestDays = new Set([...requestsMap.keys()].map((k) => k.split("\t")[0])).size;
 
   const projectLines = [...linesBySlug.entries()]
     .map(([slug, lines]) => ({
@@ -360,17 +328,16 @@ async function loadAnalytics() {
     },
     averages: {
       linesPerWorkspace: workspaces > 0 ? totalLines / workspaces : 0,
-      linesPerConversationDir: conversationDirs > 0
-        ? totalLines / conversationDirs
-        : 0,
+      linesPerConversationDir: conversationDirs > 0 ? totalLines / conversationDirs : 0,
       filesPerWorkspace: workspaces > 0 ? transcriptFiles / workspaces : 0,
       requestsPerLine: totalLines > 0 ? requests / totalLines : 0,
-      perCalendarDay: calendarSpanDays > 0
-        ? {
-          sessions: mainTranscriptFiles / calendarSpanDays,
-          requests: requests / calendarSpanDays,
-        }
-        : { sessions: 0, requests: 0 },
+      perCalendarDay:
+        calendarSpanDays > 0
+          ? {
+              sessions: mainTranscriptFiles / calendarSpanDays,
+              requests: requests / calendarSpanDays,
+            }
+          : { sessions: 0, requests: 0 },
     },
     series: {
       sessionsByProjectDay: mapToProjectDaySeries(sessionsMap),
@@ -398,21 +365,18 @@ function DashboardPage() {
         <meta name="theme-color" content="#0a0b10" />
         <title>Cursor · local projects</title>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link
-          rel="preconnect"
-          href="https://fonts.gstatic.com"
-          crossorigin=""
-        />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
         <link
           href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;0,9..144,700;1,9..144,600&family=Manrope:wght@400;500;600;700&display=swap"
           rel="stylesheet"
         />
-        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js">
-        </script>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js"></script>
         <style dangerouslySetInnerHTML={{ __html: dashboardCss }} />
       </head>
       <body>
-        <a class="skip" href="#main">Skip to analytics</a>
+        <a class="skip" href="#main">
+          Skip to analytics
+        </a>
         <header>
           <div class="header-inner">
             <div>
@@ -425,31 +389,17 @@ function DashboardPage() {
               </p>
             </div>
             <div class="header-actions">
-              <button
-                type="button"
-                class="btn"
-                id="reload"
-                aria-label="Reload dashboard data"
-              >
+              <button type="button" class="btn" id="reload" aria-label="Reload dashboard data">
                 Rescan
               </button>
             </div>
           </div>
           <div class="header-range reveal d1">
-            <div
-              class="range-bar"
-              id="range-bar"
-              role="toolbar"
-              aria-label="Chart date range"
-            >
+            <div class="range-bar" id="range-bar" role="toolbar" aria-label="Chart date range">
               <p class="range-label" id="range-label-text">
                 Trend range
               </p>
-              <div
-                class="range-seg"
-                role="group"
-                aria-labelledby="range-label-text"
-              >
+              <div class="range-seg" role="group" aria-labelledby="range-label-text">
                 <button type="button" class="btn range-btn" data-range="7d">
                   Last 7d
                 </button>
@@ -471,28 +421,14 @@ function DashboardPage() {
         </header>
         <main id="main">
           <div id="err" role="alert" aria-live="assertive"></div>
-          <div
-            id="banner"
-            hidden
-            class="banner"
-            role="status"
-            aria-live="polite"
-          >
-          </div>
-          <div
-            class="grid reveal d1"
-            id="kpis"
-            aria-busy="true"
-            aria-label="Key metrics"
-          >
-          </div>
+          <div id="banner" hidden class="banner" role="status" aria-live="polite"></div>
+          <div class="grid reveal d1" id="kpis" aria-busy="true" aria-label="Key metrics"></div>
           <section class="reveal d2" aria-labelledby="trends-heading">
             <h2 id="trends-heading">Rhythm</h2>
             <p class="section-lead">
-              Sessions = new main transcript JSONL files per UTC day (birth time).
-              Requests = user rows + tool uses from each file, spread evenly
-              across that file’s birth → last modified day (JSONL has no
-              per-line timestamps).
+              Sessions = new main transcript JSONL files per UTC day (birth time). Requests = user
+              rows + tool uses from each file, spread evenly across that file’s birth → last
+              modified day (JSONL has no per-line timestamps).
             </p>
             <div class="charts two">
               <div class="chart-wrap">
@@ -502,8 +438,7 @@ function DashboardPage() {
                   width={400}
                   height={260}
                   aria-label="Stacked bar chart of new sessions per day by workspace slug"
-                >
-                </canvas>
+                ></canvas>
               </div>
               <div class="chart-wrap">
                 <h3>Requests / day</h3>
@@ -512,26 +447,23 @@ function DashboardPage() {
                   width={400}
                   height={260}
                   aria-label="Stacked bar chart of requests per day by workspace slug"
-                >
-                </canvas>
+                ></canvas>
               </div>
             </div>
           </section>
           <section class="reveal d3" aria-labelledby="projects-heading">
             <h2 id="projects-heading">Workspaces</h2>
             <p class="section-lead">
-              Folder names under <code>.cursor/projects</code> (Cursor’s path
-              slug), ranked by transcript line volume.
+              Folder names under <code>.cursor/projects</code> (Cursor’s path slug), ranked by
+              transcript line volume.
             </p>
             <div id="projects"></div>
           </section>
           <footer>
-            <strong>Sessions</strong> = one new main transcript file.{" "}
-            <strong>Requests</strong> = <code>user</code> rows plus{" "}
-            <code>tool_use</code> parts (same spirit as OpenCode), attributed
-            across days by birth→mtime spread. Set{" "}
-            <code>CURSOR_PROJECTS_DIR</code> to override the scan root. Raw
-            JSON lives at <code>/api/analytics.json</code>.
+            <strong>Sessions</strong> = one new main transcript file. <strong>Requests</strong> ={" "}
+            <code>user</code> rows plus <code>tool_use</code> parts (same spirit as OpenCode),
+            attributed across days by birth→mtime spread. Set <code>CURSOR_PROJECTS_DIR</code> to
+            override the scan root. Raw JSON lives at <code>/api/analytics.json</code>.
           </footer>
         </main>
         <script dangerouslySetInnerHTML={{ __html: dashboardJs }} />
