@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-950">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mermaid Studio - HD PNG Renderer & Editor</title>
+    <!-- Tailwind CSS for modern simplified styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts for typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Official Mermaid JS SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .code-font {
+            font-family: 'Fira Code', monospace;
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0b0f19;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #334155;
+        }
+        /* Clean checkered backdrop for preview grid */
+        .preview-grid {
+            background-color: #0b0f19;
+            background-image: 
+                linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+            background-size: 24px 24px;
+        }
+    </style>
+</head>
+<body class="h-full flex flex-col text-slate-200 overflow-hidden select-none">
+
+    <!-- Minimalist Top Navigation Header -->
+    <header class="bg-slate-900 border-b border-slate-800/80 px-6 py-3.5 flex items-center justify-between shrink-0 z-20">
+        <div class="flex items-center space-x-3">
+            <div class="bg-gradient-to-br from-indigo-500 to-purple-600 p-2 rounded-lg shadow-md shadow-indigo-500/10">
+                <i class="fa-solid fa-diagram-project text-base text-white"></i>
+            </div>
+            <div>
+                <h1 class="text-sm font-bold tracking-tight bg-gradient-to-r from-slate-100 to-slate-300 bg-clip-text text-transparent">
+                    Mermaid Studio
+                </h1>
+                <p class="text-[10px] text-slate-500 font-medium">Simplify, Render, and Export Diagrams</p>
+            </div>
+        </div>
+
+        <!-- Utility status links -->
+        <div class="flex items-center space-x-4 text-xs">
+            <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-slate-800 text-slate-400 border border-slate-700/50">
+                <span class="w-1.5 h-1.5 bg-indigo-400 rounded-full mr-1.5 animate-pulse"></span>
+                Gemini AI Connected
+            </span>
+            <span class="h-4 w-[1px] bg-slate-800"></span>
+            <a href="https://mermaid.js.org/" target="_blank" class="text-slate-400 hover:text-slate-200 transition-all flex items-center space-x-1">
+                <span>Docs</span>
+                <i class="fa-solid fa-arrow-up-right-from-square text-[9px] text-slate-500"></i>
+            </a>
+        </div>
+    </header>
+
+    <!-- Main Dual-Pane Workspace -->
+    <main class="flex-1 flex overflow-hidden min-h-0 relative">
+        
+        <!-- Left Panel: Minimalist Editor -->
+        <section class="w-[38%] min-w-[360px] border-r border-slate-800/80 bg-slate-950 flex flex-col h-full z-10">
+            <!-- Selector Header -->
+            <div class="p-3 border-b border-slate-900 flex items-center justify-between bg-slate-900/30">
+                <div class="relative w-44">
+                    <select id="templateSelect" class="w-full bg-slate-900/90 border border-slate-800 text-slate-300 rounded-md pl-2.5 pr-8 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500/60 appearance-none cursor-pointer">
+                        <option value="flowchart">Flowchart (Logic Tree)</option>
+                        <option value="sequence">Sequence Diagram</option>
+                        <option value="gantt">Gantt Chart (Timeline)</option>
+                        <option value="class">Class Diagram</option>
+                        <option value="state">State Machine</option>
+                        <option value="er">ER Database Model</option>
+                        <option value="pie">Pie Chart</option>
+                        <option value="mindmap">Mindmap</option>
+                        <option value="git">Git Graph</option>
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500">
+                        <i class="fa-solid fa-chevron-down text-[10px]"></i>
+                    </div>
+                </div>
+                
+                <button id="clearBtn" class="text-[11px] text-slate-500 hover:text-rose-400 transition flex items-center space-x-1 px-2 py-1 rounded hover:bg-slate-900">
+                    <i class="fa-regular fa-trash-can"></i>
+                    <span>Clear</span>
+                </button>
+            </div>
+
+            <!-- Code Input Space -->
+            <div class="flex-1 flex flex-col min-h-0 relative">
+                <textarea id="codeEditor" spellcheck="false" class="absolute inset-0 w-full h-full p-4 bg-transparent text-slate-300 code-font text-xs leading-relaxed resize-none focus:outline-none select-text border-0" placeholder="Write your diagram syntax here..."></textarea>
+            </div>
+
+            <!-- AI Error Diagnostic Panel (Reveals on Syntax Error) -->
+            <div id="errorDisplay" class="hidden shrink-0 bg-slate-900 border-t border-slate-800/80 p-4 transition-all duration-200">
+                <div class="flex items-start space-x-3">
+                    <div class="bg-rose-500/10 p-1.5 rounded-lg border border-rose-500/20 text-rose-400">
+                        <i class="fa-solid fa-triangle-exclamation text-xs"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center justify-between">
+                            <span class="text-[10px] font-bold text-rose-400 uppercase tracking-wider">Syntax Blocked</span>
+                            <span id="saveStatus" class="text-[9px] text-slate-500">Validation Active</span>
+                        </div>
+                        <p id="errorMessage" class="text-[11px] text-slate-400 mt-1 font-mono break-all line-clamp-2 select-text"></p>
+                        
+                        <!-- AI Fix Trigger -->
+                        <div class="mt-3">
+                            <button id="aiFixBtn" class="w-full bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 active:scale-[0.98] text-white font-semibold text-xs py-1.5 px-3 rounded shadow-md flex items-center justify-center space-x-2 transition-all">
+                                <i id="aiFixIcon" class="fa-solid fa-wand-magic-sparkles"></i>
+                                <span id="aiFixText">Fix with Gemini AI</span>
+                            </button>
+                            <p id="aiFixExplanation" class="text-[11px] text-indigo-300 mt-2 p-2 bg-indigo-950/20 border border-indigo-900/30 rounded hidden select-text"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Config Panel (Simplified Footer Drawer) -->
+            <div class="border-t border-slate-900 p-4 bg-slate-900/10 space-y-3.5">
+                <div class="grid grid-cols-2 gap-3.5">
+                    <!-- Export Quality Selector -->
+                    <div>
+                        <label class="block text-[10px] uppercase font-bold text-slate-500 mb-1 tracking-wider">PNG Resolution</label>
+                        <select id="exportScale" class="w-full bg-slate-900 border border-slate-800 text-slate-300 rounded-md px-2.5 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer">
+                            <option value="1">1x (Standard)</option>
+                            <option value="2" selected>2x (High Res)</option>
+                            <option value="3">3x (Retina Print)</option>
+                            <option value="4">4x (Ultra HD)</option>
+                            <option value="5">5x (Enterprise 8K)</option>
+                        </select>
+                    </div>
+
+                    <!-- Mermaid Theme Selector -->
+                    <div>
+                        <label class="block text-[10px] uppercase font-bold text-slate-500 mb-1 tracking-wider">Theme Profile</label>
+                        <select id="diagramTheme" class="w-full bg-slate-900 border border-slate-800 text-slate-300 rounded-md px-2.5 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer">
+                            <option value="default" selected>Default (Original)</option>
+                            <option value="dark">Dark Theme</option>
+                            <option value="neutral">Neutral (Minimal)</option>
+                            <option value="forest">Forest Theme</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3.5">
+                    <!-- Export Background -->
+                    <div>
+                        <label class="block text-[10px] uppercase font-bold text-slate-500 mb-1 tracking-wider">Export Backdrop</label>
+                        <select id="bgMode" class="w-full bg-slate-900 border border-slate-800 text-slate-300 rounded-md px-2.5 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer">
+                            <option value="transparent">Transparent</option>
+                            <option value="white" selected>White Solid</option>
+                            <option value="dark">Dark Slate</option>
+                            <option value="custom">Custom Hex</option>
+                        </select>
+                    </div>
+
+                    <!-- Custom BG Color Frame -->
+                    <div id="customBgContainer" class="opacity-30 pointer-events-none transition-all">
+                        <label class="block text-[10px] uppercase font-bold text-slate-500 mb-1 tracking-wider">Hex Accent</label>
+                        <div class="flex space-x-1.5">
+                            <input type="color" id="customColorPicker" value="#ffffff" class="w-6 h-6 rounded border border-slate-800 bg-transparent cursor-pointer shrink-0">
+                            <input type="text" id="customBgText" value="#ffffff" placeholder="#FFFFFF" class="flex-1 bg-slate-900 border border-slate-800 text-slate-300 rounded-md px-2 py-0 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Right Panel: Spacious Visualizer Studio Canvas -->
+        <section class="flex-1 bg-slate-950 flex flex-col h-full relative overflow-hidden">
+            <!-- Interactive View Controls Header -->
+            <div class="bg-slate-900 border-b border-slate-800/80 px-4 py-2.5 flex items-center justify-between shrink-0 z-10">
+                <div class="flex items-center space-x-2">
+                    <div class="flex items-center space-x-1 bg-slate-950 px-2 py-1 rounded border border-slate-800">
+                        <button id="zoomOutBtn" title="Zoom Out" class="text-slate-400 hover:text-slate-200 px-1 transition"><i class="fa-solid fa-minus text-[10px]"></i></button>
+                        <span id="zoomPercent" class="text-[10px] font-semibold text-slate-400 min-w-[36px] text-center">100%</span>
+                        <button id="zoomInBtn" title="Zoom In" class="text-slate-400 hover:text-slate-200 px-1 transition"><i class="fa-solid fa-plus text-[10px]"></i></button>
+                    </div>
+                    <button id="zoomResetBtn" class="text-[10px] text-slate-400 hover:text-slate-200 bg-slate-950 px-2 py-1 rounded border border-slate-800 transition">Reset View</button>
+                </div>
+
+                <!-- Export Suite -->
+                <div class="flex items-center space-x-2">
+                    <button id="copySvgBtn" class="bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 px-2.5 py-1 rounded-md text-xs font-semibold flex items-center space-x-1.5 transition cursor-pointer">
+                        <i class="fa-regular fa-copy"></i>
+                        <span class="hidden sm:inline">SVG</span>
+                    </button>
+
+                    <button id="copyPngBtn" class="bg-indigo-600/10 hover:bg-indigo-600/20 text-indigo-300 border border-indigo-500/20 px-2.5 py-1 rounded-md text-xs font-semibold flex items-center space-x-1.5 transition cursor-pointer">
+                        <i class="fa-regular fa-image"></i>
+                        <span class="hidden sm:inline">Copy PNG</span>
+                    </button>
+
+                    <button id="exportPngBtn" class="bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white shadow-lg shadow-indigo-500/5 px-3 py-1 rounded-md text-xs font-bold flex items-center space-x-1.5 transition cursor-pointer">
+                        <i class="fa-solid fa-arrow-down-to-line"></i>
+                        <span>Export PNG</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Workspace Target Area -->
+            <div class="flex-1 relative overflow-hidden preview-grid" id="viewportContainer">
+                <!-- Empty Placeholder -->
+                <div id="emptyState" class="absolute inset-0 flex flex-col items-center justify-center p-8 hidden">
+                    <div class="w-12 h-12 bg-slate-900 rounded-xl flex items-center justify-center mb-3 border border-slate-800">
+                        <i class="fa-solid fa-terminal text-lg text-slate-500"></i>
+                    </div>
+                    <p class="text-slate-400 text-xs text-center font-medium">Add diagram syntax to render workspace assets</p>
+                </div>
+
+                <!-- Interactive Drag Pan Container -->
+                <div id="panContainer" class="absolute inset-0 cursor-grab active:cursor-grabbing flex items-center justify-center origin-center transition-transform duration-75">
+                    <div id="mermaidTarget" class="p-8 select-none flex items-center justify-center pointer-events-none">
+                        <!-- Mermaid SVG injection target -->
+                    </div>
+                </div>
+
+                <!-- Action Feedback Toasts -->
+                <div id="toast" class="absolute bottom-4 right-4 bg-slate-900 border border-slate-800 text-slate-300 px-3.5 py-2.5 rounded-lg shadow-xl flex items-center space-x-2 translate-y-16 opacity-0 transition-all duration-300 ease-out pointer-events-none z-30">
+                    <div class="bg-indigo-500/10 p-1.5 rounded-md border border-indigo-500/20">
+                        <i id="toastIcon" class="fa-solid fa-circle-check text-indigo-400 text-xs"></i>
+                    </div>
+                    <span id="toastMessage" class="text-xs font-medium">PNG copied to clipboard!</span>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Hidden block used solely for backdrop compilation -->
+    <div id="ghostRenderFrame" class="hidden"></div>
+
+    <script>
+        // Clean built-in baseline templates
+        const TEMPLATES = {
+            flowchart: `flowchart TD
+    A[Christmas] -->|Get money| B(Go shopping)
+    B --> C{Let me think}
+    C -->|One| D[Laptop]
+    C -->|Two| E[iPhone]
+    C -->|Three| F[Car]`,
+
+            sequence: `sequenceDiagram
+    autonumber
+    Alice->>John: Hello John, how are you?
+    loop Healthcheck
+        John->>John: Fight against hypochondria
+    end
+    Note right of John: Rational thoughts!
+    John-->>Alice: Great!
+    John->>Bob: How about you?
+    Bob-->>John: Jolly good!`,
+
+            gantt: `gantt
+    title A Gantt Diagram
+    dateFormat  YYYY-MM-DD
+    section Section
+    A task           :a1, 2026-06-01, 30d
+    Another task     :after a1  , 20d
+    section Another
+    Task in Another  :2026-06-12  , 12d
+    another task     : 24d`,
+
+            class: `classDiagram
+    Class01 <|-- AveryLongClass : Cool
+    Class03 *-- Class04
+    Class05 o-- Class06
+    Class07 .. Class08
+    Class09 --> C2 : Where am I?
+    Class09 --* C3
+    Class09 --|> Class07
+    class Class01{
+      <<interface>>
+      -size: int
+      +methods()
+    }`,
+
+            state: `stateDiagram-v2
+    [*] --> Still
+    Still --> [*]
+    Still --> Moving
+    Moving --> Still
+    Moving --> Crash
+    Crash --> [*]`,
+
+            er: `erDiagram
+    CUSTOMER }|..|{ DELIVERY-ADDRESS : has
+    CUSTOMER ||--o{ ORDER : places
+    ORDER ||--|{ LINE-ITEM : contains
+    CUSTOMER {
+        string name
+        string custNumber
+        string sector
+    }`,
+
+            pie: `pie title Pets Adopted by Volunteers
+    "Dogs" : 386
+    "Cats" : 85
+    "Rats" : 15`,
+
+            mindmap: `mindmap
+  root((mindmap))
+    Origins
+      Long history
+      ::icon(fa fa-book)
+      Popularisation
+        British popular psychology
+    Research
+      Mental-mapping
+      Useful structures
+    Topic
+      Tools
+      Pen and paper`,
+
+            git: `gitGraph
+    commit
+    commit
+    branch develop
+    checkout develop
+    commit
+    commit
+    checkout main
+    merge develop
+    commit
+    commit`
+        };
+
+        // UI View State variables
+        let currentSvgMarkup = '';
+        let zoomScale = 1;
+        let isDragging = false;
+        let startX = 0, startY = 0;
+        let translateX = 0, translateY = 0;
+        let renderDebounceTimer;
+
+        // Element handles Cache
+        const codeEditor = document.getElementById('codeEditor');
+        const templateSelect = document.getElementById('templateSelect');
+        const clearBtn = document.getElementById('clearBtn');
+        const errorDisplay = document.getElementById('errorDisplay');
+        const errorMessage = document.getElementById('errorMessage');
+        const aiFixBtn = document.getElementById('aiFixBtn');
+        const aiFixIcon = document.getElementById('aiFixIcon');
+        const aiFixText = document.getElementById('aiFixText');
+        const aiFixExplanation = document.getElementById('aiFixExplanation');
+        
+        const exportScale = document.getElementById('exportScale');
+        const diagramTheme = document.getElementById('diagramTheme');
+        const bgMode = document.getElementById('bgMode');
+        const customBgContainer = document.getElementById('customBgContainer');
+        const customColorPicker = document.getElementById('customColorPicker');
+        const customBgText = document.getElementById('customBgText');
+
+        const viewportContainer = document.getElementById('viewportContainer');
+        const panContainer = document.getElementById('panContainer');
+        const mermaidTarget = document.getElementById('mermaidTarget');
+        const emptyState = document.getElementById('emptyState');
+        const toast = document.getElementById('toast');
+        const toastMessage = document.getElementById('toastMessage');
+        const toastIcon = document.getElementById('toastIcon');
+
+        const zoomOutBtn = document.getElementById('zoomOutBtn');
+        const zoomInBtn = document.getElementById('zoomInBtn');
+        const zoomResetBtn = document.getElementById('zoomResetBtn');
+        const zoomPercent = document.getElementById('zoomPercent');
+
+        const copySvgBtn = document.getElementById('copySvgBtn');
+        const copyPngBtn = document.getElementById('copyPngBtn');
+        const exportPngBtn = document.getElementById('exportPngBtn');
+
+        // Setup base Mermaid SDK config parameters
+        mermaid.initialize({
+            startOnLoad: false,
+            theme: 'default',
+            securityLevel: 'loose',
+            fontFamily: 'Inter, sans-serif'
+        });
+
+        // Lifecycle mounting initialization
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedCode = localStorage.getItem('mermaid_code_v2');
+            const savedTemplate = localStorage.getItem('mermaid_template_v2') || 'flowchart';
+            const savedTheme = localStorage.getItem('mermaid_theme_v2') || 'default';
+            const savedBgMode = localStorage.getItem('mermaid_bg_mode_v2') || 'white';
+            const savedScale = localStorage.getItem('mermaid_scale_v2') || '2';
+            
+            templateSelect.value = savedTemplate;
+            diagramTheme.value = savedTheme;
+            bgMode.value = savedBgMode;
+            exportScale.value = savedScale;
+
+            if (savedCode) {
+                codeEditor.value = savedCode;
+            } else {
+                codeEditor.value = TEMPLATES[savedTemplate];
+            }
+
+            handleBgModeChange();
+            triggerRender();
+        });
+
+        // Event hooks
+        templateSelect.addEventListener('change', () => {
+            const selected = templateSelect.value;
+            codeEditor.value = TEMPLATES[selected];
+            localStorage.setItem('mermaid_template_v2', selected);
+            triggerRender();
+        });
+
+        codeEditor.addEventListener('input', () => {
+            clearTimeout(renderDebounceTimer);
+            renderDebounceTimer = setTimeout(() => {
+                triggerRender();
+            }, 500);
+        });
+
+        clearBtn.addEventListener('click', () => {
+            codeEditor.value = '';
+            triggerRender();
+        });
+
+        exportScale.addEventListener('change', () => {
+            localStorage.setItem('mermaid_scale_v2', exportScale.value);
+        });
+
+        diagramTheme.addEventListener('change', () => {
+            localStorage.setItem('mermaid_theme_v2', diagramTheme.value);
+            triggerRender();
+        });
+
+        bgMode.addEventListener('change', () => {
+            handleBgModeChange();
+            localStorage.setItem('mermaid_bg_mode_v2', bgMode.value);
+        });
+
+        customColorPicker.addEventListener('input', () => {
+            customBgText.value = customColorPicker.value;
+        });
+
+        customBgText.addEventListener('input', () => {
+            if (/^#[0-9A-F]{6}$/i.test(customBgText.value)) {
+                customColorPicker.value = customBgText.value;
+            }
+        });
+
+        function handleBgModeChange() {
+            if (bgMode.value === 'custom') {
+                customBgContainer.classList.remove('opacity-30', 'pointer-events-none');
+            } else {
+                customBgContainer.classList.add('opacity-30', 'pointer-events-none');
+            }
+        }
+
+        // Pan & Zoom Engine
+        function updateTransform() {
+            panContainer.style.transform = `translate(${translateX}px, ${translateY}px) scale(${zoomScale})`;
+            zoomPercent.textContent = `${Math.round(zoomScale * 100)}%`;
+        }
+
+        // Wheel Zoom Trigger
+        viewportContainer.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const delta = e.deltaY;
+            const factor = 1.1;
+            
+            if (delta < 0) {
+                zoomScale = Math.min(zoomScale * factor, 8);
+            } else {
+                zoomScale = Math.max(zoomScale / factor, 0.15);
+            }
+            updateTransform();
+        }, { passive: false });
+
+        // Touch and Mouse Pan support
+        viewportContainer.addEventListener('mousedown', (e) => {
+            if (e.button !== 0) return;
+            isDragging = true;
+            startX = e.clientX - translateX;
+            startY = e.clientY - translateY;
+            panContainer.style.cursor = 'grabbing';
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            translateX = e.clientX - startX;
+            translateY = e.clientY - startY;
+            updateTransform();
+        });
+
+        window.addEventListener('mouseup', () => {
+            isDragging = false;
+            panContainer.style.cursor = 'grab';
+        });
+
+        // Adjust Zoom bindings
+        zoomInBtn.addEventListener('click', () => {
+            zoomScale = Math.min(zoomScale * 1.25, 8);
+            updateTransform();
+        });
+
+        zoomOutBtn.addEventListener('click', () => {
+            zoomScale = Math.max(zoomScale / 1.25, 0.15);
+            updateTransform();
+        });
+
+        zoomResetBtn.addEventListener('click', () => {
+            zoomScale = 1;
+            translateX = 0;
+            translateY = 0;
+            updateTransform();
+        });
+
+        // Core asynchronous Renderer
+        async function triggerRender() {
+            const rawCode = codeEditor.value.trim();
+            localStorage.setItem('mermaid_code_v2', rawCode);
+
+            if (!rawCode) {
+                mermaidTarget.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                errorDisplay.classList.add('hidden');
+                currentSvgMarkup = '';
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+
+            try {
+                const uniqueId = `mermaid-canvas-${Math.floor(Math.random() * 1000000)}`;
+                
+                // Re-initialize dynamic theme config
+                mermaid.initialize({
+                    startOnLoad: false,
+                    theme: diagramTheme.value,
+                    securityLevel: 'loose',
+                    fontFamily: 'Inter, sans-serif'
+                });
+
+                // Clear layout status during processing
+                mermaidTarget.innerHTML = `<div class="text-[10px] text-slate-500 font-medium tracking-wide">Rendering Canvas...</div>`;
+
+                // Perform SVG build using dynamic Mermaid SDK
+                const { svg, bindFunctions } = await mermaid.render(uniqueId, rawCode);
+                
+                // Inject compiled element
+                mermaidTarget.innerHTML = svg;
+                currentSvgMarkup = svg;
+                
+                const svgNode = mermaidTarget.querySelector('svg');
+                if (svgNode) {
+                    svgNode.style.maxWidth = '100%';
+                    svgNode.style.height = 'auto';
+                }
+
+                if (bindFunctions) {
+                    bindFunctions(mermaidTarget);
+                }
+
+                // Hide error console if render compiles successfully
+                errorDisplay.classList.add('hidden');
+                aiFixExplanation.classList.add('hidden');
+            } catch (err) {
+                console.warn("Mermaid Parse Intercepted:", err);
+                
+                let friendlyMsg = err.message || "Invalid syntax configuration detected.";
+                if (friendlyMsg.includes('Parse error')) {
+                    friendlyMsg = friendlyMsg.split('\n')[0];
+                }
+
+                errorMessage.textContent = friendlyMsg;
+                errorDisplay.classList.remove('hidden');
+
+                if (!currentSvgMarkup) {
+                    mermaidTarget.innerHTML = `
+                        <div class="text-center p-6 text-rose-500/80">
+                            <i class="fa-solid fa-triangle-exclamation text-2xl mb-1.5"></i>
+                            <p class="text-[11px] font-semibold">Diagram compilation blocked by syntax error.</p>
+                        </div>
+                    `;
+                }
+            }
+        }
+
+        // AI Fix Syntax Request handler using the direct non-streaming API route
+        aiFixBtn.addEventListener('click', async () => {
+            const brokenCode = codeEditor.value.trim();
+            const currentErr = errorMessage.textContent;
+
+            if (!brokenCode) return;
+
+            // Update UI State to loading
+            aiFixBtn.disabled = true;
+            aiFixIcon.className = "fa-solid fa-circle-notch animate-spin";
+            aiFixText.textContent = "Analyzing & Repairing...";
+            aiFixExplanation.classList.add('hidden');
+
+            try {
+                const systemPrompt = "You are an expert Mermaid.js syntax diagnostics assistant. Your job is to analyze broken Mermaid diagrams, fix them perfectly while preserving the original structure and content, and explain the fix briefly.";
+                const userQuery = `The following Mermaid syntax has a rendering error:
+\`\`\`mermaid
+${brokenCode}
+\`\`\`
+
+Error message returned from the compiler:
+${currentErr}
+
+Please analyze, correct all syntax issues, and output your answer in the requested structured JSON form. Do not invent new structures; preserve the diagram logic.`;
+
+                // Use the standard gemini-3-flash-preview model API configurations
+                const apiKey = ""; // Canvas runtime replaces this at execute time automatically
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+                const payload = {
+                    contents: [{ parts: [{ text: userQuery }] }],
+                    generationConfig: {
+                        responseMimeType: "application/json",
+                        responseSchema: {
+                            type: "OBJECT",
+                            properties: {
+                                correctedCode: { 
+                                    type: "STRING", 
+                                    description: "The complete, fully corrected, and valid Mermaid diagram code. Return ONLY the code." 
+                                },
+                                explanation: { 
+                                    type: "STRING", 
+                                    description: "A very brief explanation (1-2 sentences) of what was wrong and how it was fixed." 
+                                }
+                            },
+                            required: ["correctedCode", "explanation"]
+                        }
+                    },
+                    systemInstruction: {
+                        parts: [{ text: systemPrompt }]
+                    }
+                };
+
+                // Perform exponential backoff fetch wrapper
+                const fetchWithRetry = async (url, options, retries = 3, delay = 1000) => {
+                    try {
+                        const res = await fetch(url, options);
+                        if (!res.ok) {
+                            if (res.status === 429 && retries > 0) {
+                                await new Promise(resolve => setTimeout(resolve, delay));
+                                return fetchWithRetry(url, options, retries - 1, delay * 2);
+                            }
+                            throw new Error(`API returned status ${res.status}`);
+                        }
+                        return res;
+                    } catch (e) {
+                        if (retries > 0) {
+                            await new Promise(resolve => setTimeout(resolve, delay));
+                            return fetchWithRetry(url, options, retries - 1, delay * 2);
+                        }
+                        throw e;
+                    }
+                };
+
+                const response = await fetchWithRetry(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                const jsonText = result.candidates?.[0]?.content?.parts?.[0]?.text;
+
+                if (jsonText) {
+                    const parsed = JSON.parse(jsonText);
+                    if (parsed.correctedCode) {
+                        // Apply fixed code to editor panel
+                        codeEditor.value = parsed.correctedCode;
+                        
+                        // Show description explanation text below code
+                        aiFixExplanation.textContent = parsed.explanation || "Corrected syntax issues successfully.";
+                        aiFixExplanation.classList.remove('hidden');
+
+                        // Instantly fire rendering pipeline update
+                        await triggerRender();
+                        showToastNotification("AI Correction Applied Successfully!");
+                    } else {
+                        throw new Error("Invalid payload schema structure inside Gemini result context.");
+                    }
+                } else {
+                    throw new Error("Unable to read valid output from Gemini response candidate.");
+                }
+
+            } catch (err) {
+                console.error("AI Assistant Failure:", err);
+                showToastNotification("Gemini API error. Try editing manually.", true);
+            } finally {
+                // Restore UI state
+                aiFixBtn.disabled = false;
+                aiFixIcon.className = "fa-solid fa-wand-magic-sparkles";
+                aiFixText.textContent = "Fix with Gemini AI";
+            }
+        });
+
+        // Build crisp canvas wrapper for exporting
+        async function generateCanvasBuffer() {
+            const svgNode = mermaidTarget.querySelector('svg');
+            if (!svgNode) {
+                throw new Error("No SVG rendered model present to prepare.");
+            }
+
+            const clonedSvg = svgNode.cloneNode(true);
+            clonedSvg.removeAttribute('style');
+
+            // Collect target sizes
+            let boundingWidth = svgNode.viewBox.baseVal.width || svgNode.width.baseVal.value || 800;
+            let boundingHeight = svgNode.viewBox.baseVal.height || svgNode.height.baseVal.value || 600;
+
+            if (!boundingWidth || !boundingHeight) {
+                const viewBoxAttr = svgNode.getAttribute('viewBox');
+                if (viewBoxAttr) {
+                    const parts = viewBoxAttr.split(/\s+/).map(Number);
+                    if (parts.length === 4) {
+                        boundingWidth = parts[2];
+                        boundingHeight = parts[3];
+                    }
+                }
+            }
+
+            const selectedScale = parseFloat(exportScale.value) || 2;
+            const outputCanvasWidth = boundingWidth * selectedScale;
+            const outputCanvasHeight = boundingHeight * selectedScale;
+
+            clonedSvg.setAttribute('width', outputCanvasWidth);
+            clonedSvg.setAttribute('height', outputCanvasHeight);
+
+            const exportCanvas = document.createElement('canvas');
+            exportCanvas.width = outputCanvasWidth;
+            exportCanvas.height = outputCanvasHeight;
+            const ctx = exportCanvas.getContext('2d');
+
+            const currentBg = bgMode.value;
+            if (currentBg !== 'transparent') {
+                if (currentBg === 'white') {
+                    ctx.fillStyle = '#ffffff';
+                } else if (currentBg === 'dark') {
+                    ctx.fillStyle = '#0b0f19';
+                } else if (currentBg === 'custom') {
+                    ctx.fillStyle = customBgText.value || '#ffffff';
+                }
+                ctx.fillRect(0, 0, outputCanvasWidth, outputCanvasHeight);
+            }
+
+            const serializer = new XMLSerializer();
+            const svgXML = serializer.serializeToString(clonedSvg);
+
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                const svgBlob = new Blob([svgXML], { type: 'image/svg+xml;charset=utf-8' });
+                const blobUrl = URL.createObjectURL(svgBlob);
+
+                img.onload = () => {
+                    ctx.drawImage(img, 0, 0, outputCanvasWidth, outputCanvasHeight);
+                    URL.revokeObjectURL(blobUrl);
+                    resolve(exportCanvas);
+                };
+
+                img.onerror = (err) => {
+                    URL.revokeObjectURL(blobUrl);
+                    reject(new Error("Image compilation failed inside background rendering stage."));
+                };
+
+                img.src = blobUrl;
+            });
+        }
+
+        // Direct System Clipboard PNG Export
+        copyPngBtn.addEventListener('click', async () => {
+            if (!currentSvgMarkup) {
+                showToastNotification("Empty workspace. Render a valid diagram first.", true);
+                return;
+            }
+
+            copyPngBtn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> <span>Compiling...</span>`;
+            
+            try {
+                const canvas = await generateCanvasBuffer();
+                
+                canvas.toBlob(async (blob) => {
+                    if (!blob) {
+                        throw new Error("Blob creation failed");
+                    }
+                    try {
+                        // Direct clipboard injection attempt
+                        await navigator.clipboard.write([
+                            new ClipboardItem({ 'image/png': blob })
+                        ]);
+                        showToastNotification("High-res PNG copied to clipboard!");
+                    } catch (clipError) {
+                        console.warn("Direct Clipboard API failed inside sandbox environment. Falling back to downloading resource.", clipError);
+                        triggerFileDownload(canvas.toDataURL('image/png'), 'mermaid-diagram.png');
+                        showToastNotification("Export limit: Downloaded PNG instead.");
+                    }
+                }, 'image/png');
+
+            } catch (err) {
+                console.error(err);
+                showToastNotification("Error compiling PNG assets.", true);
+            } finally {
+                copyPngBtn.innerHTML = `<i class="fa-regular fa-image"></i> <span>Copy PNG</span>`;
+            }
+        });
+
+        // Trigger Local File Downloader
+        exportPngBtn.addEventListener('click', async () => {
+            if (!currentSvgMarkup) {
+                showToastNotification("Nothing to download.", true);
+                return;
+            }
+
+            exportPngBtn.innerHTML = `<i class="fa-solid fa-circle-notch animate-spin"></i> <span>Exporting...</span>`;
+
+            try {
+                const canvas = await generateCanvasBuffer();
+                const fileUri = canvas.toDataURL('image/png');
+                triggerFileDownload(fileUri, `mermaid-diagram-${Date.now()}.png`);
+                showToastNotification("High-Res PNG download initialized!");
+            } catch (err) {
+                console.error(err);
+                showToastNotification("Download failed. Check syntax configuration.", true);
+            } finally {
+                exportPngBtn.innerHTML = `<i class="fa-solid fa-arrow-down-to-line"></i> <span>Export PNG</span>`;
+            }
+        });
+
+        // Copy raw SVG markup text strings
+        copySvgBtn.addEventListener('click', () => {
+            const svgNode = mermaidTarget.querySelector('svg');
+            if (!svgNode) {
+                showToastNotification("Nothing to export.", true);
+                return;
+            }
+
+            try {
+                const serializer = new XMLSerializer();
+                const svgString = serializer.serializeToString(svgNode);
+                
+                const tempTextArea = document.createElement('textarea');
+                tempTextArea.value = svgString;
+                document.body.appendChild(tempTextArea);
+                tempTextArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(tempTextArea);
+                
+                showToastNotification("Raw SVG markup copied directly!");
+            } catch (err) {
+                showToastNotification("Copying SVG failed.", true);
+            }
+        });
+
+        function triggerFileDownload(url, filename) {
+            const downloadLink = document.createElement('a');
+            downloadLink.href = url;
+            downloadLink.download = filename;
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            document.body.removeChild(downloadLink);
+        }
+
+        // Notification Manager Toast Utilities
+        function showToastNotification(message, isError = false) {
+            toastMessage.textContent = message;
+            
+            const iconWrapper = toast.querySelector('.bg-indigo-500\\/10');
+            
+            if (isError) {
+                toast.classList.replace('border-slate-800', 'border-rose-500/40');
+                toast.classList.replace('text-slate-300', 'text-rose-200');
+                iconWrapper.className = "bg-rose-500/10 p-1.5 rounded-md border border-rose-500/20";
+                toastIcon.className = "fa-solid fa-circle-xmark text-rose-400 text-xs";
+            } else {
+                toast.classList.replace('border-rose-500/40', 'border-slate-800');
+                toast.classList.replace('text-rose-200', 'text-slate-300');
+                iconWrapper.className = "bg-indigo-500/10 p-1.5 rounded-md border border-indigo-500/20";
+                toastIcon.className = "fa-solid fa-circle-check text-indigo-400 text-xs";
+            }
+
+            toast.classList.remove('translate-y-16', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-16', 'opacity-0');
+            }, 3200);
+        }
+    </script>
+</body>
+</html>

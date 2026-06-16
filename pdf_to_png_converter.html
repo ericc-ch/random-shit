@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF to PNG Converter</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- PDF.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <!-- JSZip CDN for downloading all pages as a ZIP file -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        
+        body {
+            font-family: var(--font-sans);
+            background-color: #fcfcfb;
+        }
+
+        /* Custom scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #e4e4e7;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #d4d4d8;
+        }
+
+        /* Tactile interaction transitions */
+        .interactive-scale {
+            transition: transform 150ms var(--ease-out-expo), opacity 150ms var(--ease-out-expo), background-color 150ms var(--ease-out-expo), border-color 150ms var(--ease-out-expo);
+        }
+        
+        .interactive-scale:active {
+            transform: scale(0.97);
+        }
+
+        /* Hover gate to prevent sticky states on mobile */
+        @media (hover: hover) and (pointer: fine) {
+            .hover-lift {
+                transition: transform 250ms var(--ease-out-expo), box-shadow 250ms var(--ease-out-expo), border-color 250ms var(--ease-out-expo);
+            }
+            .hover-lift:hover {
+                transform: translateY(-4px);
+                box-shadow: 0 16px 32px -12px rgba(28, 28, 26, 0.08);
+                border-color: #1c1c1a;
+            }
+        }
+
+        /* Entrance animation */
+        .fade-in-up {
+            animation: fadeInUp 400ms var(--ease-out-expo) forwards;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(16px) scale(0.97);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        /* Stagger delays for generated cards */
+        .stagger-1 { animation-delay: 30ms; }
+        .stagger-2 { animation-delay: 60ms; }
+        .stagger-3 { animation-delay: 90ms; }
+        .stagger-4 { animation-delay: 120ms; }
+    </style>
+</head>
+<body class="text-[#1c1c1a] min-h-screen flex flex-col antialiased selection:bg-[#1c1c1a] selection:text-white">
+
+    <!-- Header -->
+    <header class="bg-[#fcfcfb]/80 backdrop-blur-md border-b border-[#e5e5e0] py-4 px-6 sticky top-0 z-10">
+        <div class="max-w-6xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="bg-[#1c1c1a] text-[#fcfcfb] p-2.5 rounded-lg">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-md font-bold tracking-tight text-[#1c1c1a]">PaperConvert</h1>
+                    <p class="text-xs text-[#70706a]">Convert PDF documents to clean PNG images in your browser.</p>
+                </div>
+            </div>
+            
+            <!-- Global Action Controls -->
+            <div id="global-actions" class="hidden flex items-center gap-3 w-full sm:w-auto">
+                <button id="btn-clear" class="interactive-scale flex-1 sm:flex-initial px-4 py-2 text-xs font-semibold text-[#70706a] hover:text-[#1c1c1a] bg-transparent border border-[#e5e5e0] rounded-lg hover:border-[#1c1c1a] flex items-center justify-center gap-2 focus:ring-2 focus:ring-[#1c1c1a] focus:outline-none">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                    </svg>
+                    Clear File
+                </button>
+                <button id="btn-download-all" class="interactive-scale flex-1 sm:flex-initial px-4 py-2 text-xs font-semibold text-white bg-[#1c1c1a] border border-[#1c1c1a] rounded-lg hover:bg-[#2d2d2a] flex items-center justify-center gap-2 focus:ring-2 focus:ring-[#1c1c1a] focus:outline-none">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                    </svg>
+                    Download All (ZIP)
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 max-w-6xl w-full mx-auto p-6 md:p-12 flex flex-col gap-8 justify-center">
+        
+        <!-- Error Banner Container -->
+        <div id="error-container" class="hidden bg-[#fdf2f2] border border-[#f5c6c6] rounded-xl p-4 flex items-start gap-3 fade-in-up">
+            <svg class="w-5 h-5 text-[#de3c3c] mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+            </svg>
+            <div class="flex-1">
+                <h3 class="text-sm font-bold text-[#de3c3c]">Conversion Error</h3>
+                <p id="error-message" class="text-xs text-[#a62c2c] mt-1"></p>
+            </div>
+            <button id="btn-dismiss-error" class="text-[#de3c3c] hover:text-[#a62c2c] transition-colors" aria-label="Dismiss error">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+
+        <!-- Initial Upload / Configuration Panel -->
+        <div id="setup-panel" class="bg-[#fcfcfb] rounded-2xl border border-[#e5e5e0] p-8 md:p-12 flex flex-col gap-8 max-w-xl mx-auto w-full fade-in-up">
+            <div class="text-center">
+                <h2 class="text-2xl font-bold text-[#1c1c1a] tracking-tight">Convert PDF to Clean Images</h2>
+                <p class="text-sm text-[#70706a] mt-2">Conversion is completed inside your browser. No files are uploaded to servers.</p>
+            </div>
+
+            <!-- Drag and Drop Area -->
+            <div id="drop-zone" class="interactive-scale border border-dashed border-[#c2c2bb] rounded-xl p-10 text-center cursor-pointer hover:border-[#1c1c1a] bg-[#f5f5f3]/30 hover:bg-[#f5f5f3]/80 flex flex-col items-center gap-4 focus-within:ring-2 focus-within:ring-[#1c1c1a]">
+                <input type="file" id="file-input" class="hidden" accept="application/pdf">
+                <div class="p-3.5 bg-white border border-[#e5e5e0] rounded-xl text-[#1c1c1a] shadow-sm">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 16v-8m0 8l-4-4m4 4l4-4M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1"></path>
+                    </svg>
+                </div>
+                <div>
+                    <p class="text-sm font-semibold text-[#1c1c1a]">Choose a PDF file to begin</p>
+                    <p class="text-xs text-[#70706a] mt-1">Drag and drop file directly here</p>
+                </div>
+            </div>
+
+            <!-- Conversion Settings -->
+            <div class="border-t border-[#e5e5e0] pt-6">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-[#70706a] mb-4">Target Resolution</h3>
+                <div class="grid grid-cols-3 gap-3">
+                    <label class="relative flex flex-col p-4 border border-[#e5e5e0] rounded-xl cursor-pointer hover:border-[#1c1c1a] bg-[#fcfcfb] select-none focus-within:ring-2 focus-within:ring-[#1c1c1a]">
+                        <input type="radio" name="resolution" value="1.5" class="absolute top-4 right-4 accent-[#1c1c1a] text-[#1c1c1a]" checked>
+                        <span class="text-sm font-bold text-[#1c1c1a]">Standard</span>
+                        <span class="text-xs text-[#70706a] mt-1">Web display</span>
+                    </label>
+                    <label class="relative flex flex-col p-4 border border-[#e5e5e0] rounded-xl cursor-pointer hover:border-[#1c1c1a] bg-[#fcfcfb] select-none focus-within:ring-2 focus-within:ring-[#1c1c1a]">
+                        <input type="radio" name="resolution" value="2.5" class="absolute top-4 right-4 accent-[#1c1c1a] text-[#1c1c1a]">
+                        <span class="text-sm font-bold text-[#1c1c1a]">Retina</span>
+                        <span class="text-xs text-[#70706a] mt-1">Crisp vector texts</span>
+                    </label>
+                    <label class="relative flex flex-col p-4 border border-[#e5e5e0] rounded-xl cursor-pointer hover:border-[#1c1c1a] bg-[#fcfcfb] select-none focus-within:ring-2 focus-within:ring-[#1c1c1a]">
+                        <input type="radio" name="resolution" value="4.0" class="absolute top-4 right-4 accent-[#1c1c1a] text-[#1c1c1a]">
+                        <span class="text-sm font-bold text-[#1c1c1a]">Print</span>
+                        <span class="text-xs text-[#70706a] mt-1">Highest detail</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Rendering Progress Overlay -->
+        <div id="progress-panel" class="hidden bg-[#fcfcfb] rounded-2xl border border-[#e5e5e0] p-10 text-center max-w-sm mx-auto w-full fade-in-up flex flex-col items-center gap-6">
+            <div class="relative flex items-center justify-center">
+                <div class="w-10 h-10 border-2 border-[#e5e5e0] border-t-[#1c1c1a] rounded-full animate-spin"></div>
+            </div>
+            <div>
+                <h3 class="text-md font-bold text-[#1c1c1a]">Processing Document</h3>
+                <p id="progress-status" class="text-xs text-[#70706a] mt-1.5">Starting engine...</p>
+            </div>
+            <!-- Progress Bar -->
+            <div class="w-full bg-[#e5e5e0] h-1 rounded-full overflow-hidden">
+                <div id="progress-bar-fill" class="bg-[#1c1c1a] h-full w-0 transition-all duration-300 ease-out"></div>
+            </div>
+        </div>
+
+        <!-- Rendered Page Output Workspace -->
+        <div id="workspace-panel" class="hidden flex flex-col gap-8 fade-in-up">
+            <!-- Workspace Summary Header -->
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-2xl border border-[#e5e5e0]">
+                <div>
+                    <h2 id="document-title" class="font-bold text-lg text-[#1c1c1a] break-all">document.pdf</h2>
+                    <p id="document-meta" class="text-xs text-[#70706a] mt-1">No pages loaded</p>
+                </div>
+            </div>
+
+            <!-- Grid of rendered pages -->
+            <div id="pages-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+                <!-- Dynamically populated page cards -->
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-[#fcfcfb] border-t border-[#e5e5e0] py-6 px-6 mt-auto">
+        <div class="max-w-6xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-[#70706a]">
+            <p>PaperConvert is run entirely on your hardware via secure WebAssembly sandboxes.</p>
+            <p>Local Processing • Privacy Absolute</p>
+        </div>
+    </footer>
+
+    <!-- App JavaScript Logic -->
+    <script>
+        // Setup PDFJS global worker configuration
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+
+        // Core Application State
+        const state = {
+            pdfDoc: null,
+            filename: '',
+            pages: [], 
+            isConverting: false
+        };
+
+        // DOM elements
+        const elements = {
+            dropZone: document.getElementById('drop-zone'),
+            fileInput: document.getElementById('file-input'),
+            setupPanel: document.getElementById('setup-panel'),
+            progressPanel: document.getElementById('progress-panel'),
+            workspacePanel: document.getElementById('workspace-panel'),
+            pagesGrid: document.getElementById('pages-grid'),
+            progressStatus: document.getElementById('progress-status'),
+            progressBarFill: document.getElementById('progress-bar-fill'),
+            documentTitle: document.getElementById('document-title'),
+            documentMeta: document.getElementById('document-meta'),
+            globalActions: document.getElementById('global-actions'),
+            btnClear: document.getElementById('btn-clear'),
+            btnDownloadAll: document.getElementById('btn-download-all'),
+            errorContainer: document.getElementById('error-container'),
+            errorMessage: document.getElementById('error-message'),
+            btnDismissError: document.getElementById('btn-dismiss-error')
+        };
+
+        // Setup Drag & Drop Handlers
+        elements.dropZone.addEventListener('click', () => elements.fileInput.click());
+
+        elements.dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            elements.dropZone.classList.add('border-[#1c1c1a]', 'bg-[#f5f5f3]/80');
+        });
+
+        elements.dropZone.addEventListener('dragleave', () => {
+            elements.dropZone.classList.remove('border-[#1c1c1a]', 'bg-[#f5f5f3]/80');
+        });
+
+        elements.dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            elements.dropZone.classList.remove('border-[#1c1c1a]', 'bg-[#f5f5f3]/80');
+            const files = e.dataTransfer.files;
+            if (files.length > 0 && files[0].type === 'application/pdf') {
+                processFile(files[0]);
+            } else {
+                showError('Please upload a valid PDF document.');
+            }
+        });
+
+        elements.fileInput.addEventListener('change', (e) => {
+            const files = e.target.files;
+            if (files.length > 0) {
+                processFile(files[0]);
+            }
+        });
+
+        // App-wide Error handler
+        function showError(message) {
+            elements.errorMessage.textContent = message;
+            elements.errorContainer.classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        elements.btnDismissError.addEventListener('click', () => {
+            elements.errorContainer.classList.add('hidden');
+        });
+
+        // Clear State and Workspace
+        function clearApp() {
+            state.pdfDoc = null;
+            state.filename = '';
+            state.pages = [];
+            state.isConverting = false;
+
+            elements.fileInput.value = '';
+            elements.pagesGrid.innerHTML = '';
+            
+            elements.setupPanel.classList.remove('hidden');
+            elements.workspacePanel.classList.add('hidden');
+            elements.progressPanel.classList.add('hidden');
+            elements.globalActions.classList.add('hidden');
+            elements.errorContainer.classList.add('hidden');
+        }
+
+        elements.btnClear.addEventListener('click', clearApp);
+
+        // Process File upload and trigger page rendering
+        async function processFile(file) {
+            state.filename = file.name;
+            const resolution = parseFloat(document.querySelector('input[name="resolution"]:checked').value);
+
+            elements.setupPanel.classList.add('hidden');
+            elements.progressPanel.classList.remove('hidden');
+            elements.errorContainer.classList.add('hidden');
+            elements.progressStatus.textContent = 'Reading document structure...';
+            elements.progressBarFill.style.width = '5%';
+
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+                const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+                
+                state.pdfDoc = await loadingTask.promise;
+                const totalPages = state.pdfDoc.numPages;
+                
+                elements.progressStatus.textContent = `Rendering page 1 of ${totalPages}...`;
+                elements.progressBarFill.style.width = '10%';
+
+                state.pages = [];
+
+                // Sequential rendering loop to avoid memory crashes
+                for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
+                    elements.progressStatus.textContent = `Rendering page ${pageNum} of ${totalPages}...`;
+                    const percentComplete = Math.floor((pageNum / totalPages) * 90) + 10;
+                    elements.progressBarFill.style.width = `${percentComplete}%`;
+
+                    const dataUrl = await renderPageToDataUrl(pageNum, resolution);
+                    state.pages.push({
+                        pageNumber: pageNum,
+                        dataUrl: dataUrl
+                    });
+                }
+
+                buildWorkspace();
+
+            } catch (error) {
+                console.error(error);
+                showError(`Failed to convert PDF document. Details: ${error.message}`);
+                clearApp();
+            }
+        }
+
+        // Render page using canvas
+        async function renderPageToDataUrl(pageNum, scale) {
+            const page = await state.pdfDoc.getPage(pageNum);
+            const viewport = page.getViewport({ scale: scale });
+
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
+
+            const renderContext = {
+                canvasContext: context,
+                viewport: viewport
+            };
+
+            await page.render(renderContext).promise;
+            return canvas.toDataURL('image/png');
+        }
+
+        // Build grid of preview cards and download action points
+        function buildWorkspace() {
+            elements.progressPanel.classList.add('hidden');
+            elements.workspacePanel.classList.remove('hidden');
+            elements.globalActions.classList.remove('hidden');
+
+            elements.documentTitle.textContent = state.filename;
+            elements.documentMeta.textContent = `${state.pages.length} Pages • Ready to Download`;
+
+            elements.pagesGrid.innerHTML = '';
+
+            state.pages.forEach((page, index) => {
+                const card = document.createElement('div');
+                const staggerClass = `stagger-${Math.min(index + 1, 4)}`;
+                card.className = `fade-in-up ${staggerClass} bg-white border border-[#e5e5e0] rounded-2xl overflow-hidden shadow-sm hover-lift flex flex-col`;
+
+                card.innerHTML = `
+                    <div class="p-6 bg-[#fcfcfb] border-b border-[#f5f5f3] flex-1 flex items-center justify-center min-h-[260px]">
+                        <img src="${page.dataUrl}" alt="Page ${page.pageNumber}" class="max-h-72 max-w-full object-contain shadow-sm border border-[#e5e5e0] bg-white transition-transform duration-200">
+                    </div>
+                    <div class="p-5 flex items-center justify-between gap-4 bg-white">
+                        <div>
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-[#70706a]">PAGE</span>
+                            <p class="text-sm font-bold text-[#1c1c1a]">${page.pageNumber}</p>
+                        </div>
+                        <button onclick="downloadPage(${page.pageNumber})" class="interactive-scale px-4 py-2 text-xs font-semibold text-white bg-[#1c1c1a] border border-[#1c1c1a] rounded-lg hover:bg-[#2d2d2a] flex items-center gap-2 focus:ring-2 focus:ring-[#1c1c1a] focus:outline-none">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                            </svg>
+                            PNG
+                        </button>
+                    </div>
+                `;
+                elements.pagesGrid.appendChild(card);
+            });
+        }
+
+        // Individual page download
+        window.downloadPage = function(pageNumber) {
+            const page = state.pages.find(p => p.pageNumber === pageNumber);
+            if (!page) return;
+
+            const baseName = state.filename.substring(0, state.filename.lastIndexOf('.')) || state.filename;
+            const link = document.createElement('a');
+            link.href = page.dataUrl;
+            link.download = `${baseName}_page_${pageNumber}.png`;
+            link.click();
+        };
+
+        // Download all pages bundled together inside a ZIP archive
+        elements.btnDownloadAll.addEventListener('click', async () => {
+            if (state.pages.length === 0) return;
+
+            const baseName = state.filename.substring(0, state.filename.lastIndexOf('.')) || state.filename;
+            const originalText = elements.btnDownloadAll.innerHTML;
+            
+            elements.btnDownloadAll.disabled = true;
+            elements.btnDownloadAll.innerHTML = `
+                <div class="w-4 h-4 border-2 border-slate-400 border-t-white rounded-full animate-spin"></div>
+                Creating ZIP...
+            `;
+
+            try {
+                const zip = new JSZip();
+
+                state.pages.forEach((page) => {
+                    const base64Data = page.dataUrl.split(',')[1];
+                    zip.file(`${baseName}_page_${page.pageNumber}.png`, base64Data, { base64: true });
+                });
+
+                const content = await zip.generateAsync({ type: 'blob' });
+                
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(content);
+                link.download = `${baseName}_png_images.zip`;
+                link.click();
+                URL.revokeObjectURL(link.href);
+
+            } catch (error) {
+                console.error(error);
+                showError('Could not pack your files. Please download them individually.');
+            } finally {
+                elements.btnDownloadAll.disabled = false;
+                elements.btnDownloadAll.innerHTML = originalText;
+            }
+        });
+    </script>
+</body>
+</html>
