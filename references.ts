@@ -1,12 +1,12 @@
 #!/usr/bin/env -S deno run -A
 
-import { dirname, fromFileUrl, join } from "jsr:@std/path@1";
+import { join } from "jsr:@std/path@1";
 
 const repositories = [
   {
     name: "Effect v4",
-    directory: "effect-smol",
-    url: "https://github.com/Effect-TS/effect-smol.git",
+    directory: "effect",
+    url: "https://github.com/Effect-TS/effect.git",
   },
   {
     name: "OpenCode",
@@ -15,9 +15,7 @@ const repositories = [
   },
 ] as const;
 
-const scriptDir = dirname(fromFileUrl(import.meta.url));
-const projectRoot = dirname(scriptDir);
-const referencesDir = join(projectRoot, ".references");
+const referencesDir = "/tmp/references";
 
 const existsSync = (path: string) => {
   try {
@@ -29,7 +27,7 @@ const existsSync = (path: string) => {
   }
 };
 
-const run = (command: string, args: ReadonlyArray<string>, cwd = projectRoot) => {
+const run = (command: string, args: ReadonlyArray<string>, cwd: string) => {
   const { code, success } = new Deno.Command(command, {
     args: [...args],
     cwd,
@@ -43,7 +41,7 @@ const run = (command: string, args: ReadonlyArray<string>, cwd = projectRoot) =>
   }
 };
 
-console.log("Setting up .references/ directory...");
+console.log("Setting up /tmp/references/ directory...");
 
 Deno.mkdirSync(referencesDir, { recursive: true });
 

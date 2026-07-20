@@ -7,6 +7,8 @@
     "npm:@types/yargs@17": "17.0.35",
     "npm:better-sqlite3@*": "12.9.0",
     "npm:open@11": "11.0.0",
+    "npm:patchright@*": "1.61.1",
+    "npm:patchright@^1.61.1": "1.61.1",
     "npm:yargs@17": "17.7.2",
     "npm:yargs@18": "18.0.0"
   },
@@ -164,6 +166,11 @@
     "fs-constants@1.0.0": {
       "integrity": "sha512-y6OAwoSIf7FyjMIv94u+b5rdheZEjzR63GTyZJm5qh4Bi+2YgwLCcI/fPFZkL5PSixOt6ZNKm+w+Hfp/Bciwow=="
     },
+    "fsevents@2.3.2": {
+      "integrity": "sha512-xiqMQR4xAeHTuB9uWm+fFRcIOgKBMiOBP+eXiyT7jsgVCq1bkVygt00oASowB7EdtpOHaaPgKt812P9ab+DDKA==",
+      "os": ["darwin"],
+      "scripts": true
+    },
     "get-caller-file@2.0.5": {
       "integrity": "sha512-DyFP3BM/3YHTQOCUL/w0OZHR0lpKeGrxotcHWcqNEdnltqFwXVfhEBQ94eIo34AfQpo0rGki4cyIiftY06h2Fg=="
     },
@@ -239,6 +246,20 @@
         "powershell-utils",
         "wsl-utils"
       ]
+    },
+    "patchright-core@1.61.1": {
+      "integrity": "sha512-d6Ju67DE6OzqlEX3WPvUX2SLEs6iMY1WERit//mpsrT98VHcztaUo0CBw2Lpxq25VdufVEiWEdcc0HnLwdiq6A==",
+      "bin": true
+    },
+    "patchright@1.61.1": {
+      "integrity": "sha512-kZWNZ2tunsBMTBWtARFVWaNvB739GOybTlIPLT91eyx0YERjtUjESawomwO0hnOh6jt1L3Sru0PK62ylYOfqQw==",
+      "dependencies": [
+        "patchright-core"
+      ],
+      "optionalDependencies": [
+        "fsevents"
+      ],
+      "bin": true
     },
     "powershell-utils@0.1.0": {
       "integrity": "sha512-dM0jVuXJPsDN6DvRpea484tCUaMiXWjuCn++HGTqUWzGDjv5tZkEZldAJ/UMlqRYGFrD/etByo4/xOuC/snX2A=="
@@ -519,7 +540,8 @@
   "workspace": {
     "dependencies": [
       "jsr:@hono/hono@^4.12.18",
-      "npm:open@11"
+      "npm:open@11",
+      "npm:patchright@^1.61.1"
     ]
   }
 }
