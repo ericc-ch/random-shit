@@ -1,7 +1,7 @@
 /**
  * Compare OpenCode Go usage estimates vs Nahcrof.
  *
- *   deno run --allow-net --allow-env pricing-compare.tsx
+ *   deno run --allow-net --allow-env web/pricing.tsx
  *
  * Optional: PORT=<n>
  */
@@ -979,7 +979,7 @@ function ComparisonPage() {
 
           <footer>
             <p>
-              Extend by appending to <code>PROVIDERS</code> in <code>pricing-compare.tsx</code> using
+              Extend by appending to <code>PROVIDERS</code> in <code>pricing.tsx</code> using
               the same canonical model ids.
             </p>
           </footer>

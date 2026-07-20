@@ -2,7 +2,7 @@
  * Local analytics dashboard for OpenCode SQLite (`opencode.db`).
  *
  * Usage:
- *   deno run --allow-read --allow-env --allow-net --allow-run --allow-sys=osRelease,uid opencode-dashboard.tsx
+ *   deno run --allow-read --allow-env --allow-net --allow-run --allow-sys=osRelease,uid web/opencode.tsx
  *
  * Optional:
  *   OPENCODE_DB=/path/to/opencode.db
@@ -330,9 +330,9 @@ function loadAnalytics() {
   }
 }
 
-const dashboardCss = Deno.readTextFileSync(new URL("./opencode-dashboard.css", import.meta.url));
+const dashboardCss = Deno.readTextFileSync(new URL("./opencode.css", import.meta.url));
 const dashboardJs = Deno.readTextFileSync(
-  new URL("./opencode-dashboard.client.js", import.meta.url),
+  new URL("./opencode.client.js", import.meta.url),
 );
 
 function DashboardPage() {

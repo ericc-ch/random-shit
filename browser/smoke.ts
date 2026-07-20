@@ -5,7 +5,7 @@
  * Closes the browser — use open.ts for an interactive headed session.
  */
 
-import { launch, pageOf, profileDir } from "./mod.ts";
+import { launch, pageOf, profileDir } from "./main.ts";
 
 const context = await launch({ headless: true });
 const page = await pageOf(context);

@@ -26,10 +26,7 @@
             packages = with pkgs; [
               mermaid-cli
               R
-              chromium
             ];
-            BROWSER_EXECUTABLE = "${pkgs.chromium}/bin/chromium";
-            CHROMIUM_PATH = "${pkgs.chromium}/bin/chromium";
           };
         }
       );

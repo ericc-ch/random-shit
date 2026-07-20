@@ -1,6 +1,6 @@
 #!/usr/bin/env -S deno run -A
 
-import { join } from "jsr:@std/path@1";
+import { join } from "@std/path";
 
 const repositories = [
   {

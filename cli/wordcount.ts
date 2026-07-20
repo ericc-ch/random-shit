@@ -1,8 +1,7 @@
 #!/usr/bin/env -S deno run -A
 
-// @deno-types="npm:@types/yargs@17"
-import yargs from "npm:yargs@18";
-import type { ArgumentsCamelCase, Argv } from "npm:@types/yargs@17";
+import yargs from "yargs";
+import type { ArgumentsCamelCase, Argv } from "yargs";
 
 interface CliOptions {
   locale: string;

@@ -1,15 +1,26 @@
 #!/usr/bin/env -S deno run -A
 
-import { launch, pageOf, profileDir } from "./mod.ts";
+/**
+ * Headed session with the persistent profile — log in, click around, Ctrl+C to exit.
+ * Cookies survive for later headless / record runs.
+ *
+ *   deno task browser:open -- https://example.com
+ */
+
+import { launch, pageOf, profileDir, untilInterrupt } from "./main.ts";
 
 const url = Deno.args[0] ?? "https://example.com";
 
-const context = await launch();
+const context = await launch({ headless: false });
 const page = await pageOf(context);
 
-await page.goto(url, { waitUntil: "domcontentloaded" });
-console.log(`opened ${page.url()}`);
-console.log(`profile ${profileDir}`);
-
-// Keep the headed browser open until Ctrl+C.
-await new Promise(() => {});
+try {
+  await page.goto(url, { waitUntil: "domcontentloaded" });
+  console.log(`opened ${page.url()}`);
+  console.log(`profile ${profileDir}`);
+  console.log("log in / browse freely — Ctrl+C when done");
+  await untilInterrupt();
+} finally {
+  await context.close();
+  console.log("closed");
+}

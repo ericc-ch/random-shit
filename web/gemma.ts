@@ -263,7 +263,7 @@ async function proxy(req: Request): Promise<Response> {
 
 if (import.meta.main) {
   console.log(
-    `handy-gemma-proxy listening on http://${HOST}:${PORT}\n` +
+    `gemma listening on http://${HOST}:${PORT}\n` +
       `  upstream: ${UPSTREAM}\n` +
       `  Handy Custom base URL: http://${HOST}:${PORT}/v1beta/openai\n` +
       `  Gemma thinking_level inject: ${GEMMA_THINKING_LEVEL || "(off — strip only)"}`,

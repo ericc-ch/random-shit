@@ -2,7 +2,7 @@
  * httpbin-style /cookies, but assigns a random cookie on first visit.
  *
  * Usage:
- *   deno run --allow-net --allow-env cookie-bin.ts
+ *   deno run --allow-net --allow-env web/cookies.ts
  *
  * Optional:
  *   PORT=8080
@@ -60,4 +60,4 @@ app.get("/cookies", (c) => {
 });
 
 const server = Deno.serve({ port: listenPort, hostname: "0.0.0.0" }, app.fetch);
-console.log(`cookie-bin listening on http://127.0.0.1:${server.addr.port}/cookies`);
+console.log(`cookies listening on http://127.0.0.1:${server.addr.port}/cookies`);

@@ -3,7 +3,7 @@
  * `~/.cursor/projects` (agent transcript JSONL + filesystem metadata).
  *
  * Usage:
- *   deno run --allow-read --allow-env --allow-net --allow-run --allow-sys=osRelease,uid cursor-projects-dashboard.tsx
+ *   deno run --allow-read --allow-env --allow-net --allow-run --allow-sys=osRelease,uid web/cursor.tsx
  *
  * Optional:
  *   CURSOR_PROJECTS_DIR=/path/to/.cursor/projects
@@ -350,10 +350,10 @@ async function loadAnalytics() {
 }
 
 const dashboardCss = Deno.readTextFileSync(
-  new URL("./cursor-projects-dashboard.css", import.meta.url),
+  new URL("./cursor.css", import.meta.url),
 );
 const dashboardJs = Deno.readTextFileSync(
-  new URL("./cursor-projects-dashboard.client.js", import.meta.url),
+  new URL("./cursor.client.js", import.meta.url),
 );
 
 function DashboardPage() {

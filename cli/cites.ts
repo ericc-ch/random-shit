@@ -1,8 +1,7 @@
 #!/usr/bin/env -S deno run -A
 
-// @deno-types="npm:@types/yargs@17"
-import yargs from "npm:yargs@18";
-import type { ArgumentsCamelCase, Argv } from "npm:@types/yargs@17";
+import yargs from "yargs";
+import type { ArgumentsCamelCase, Argv } from "yargs";
 
 interface CliOptions {
   text?: string;
@@ -20,7 +19,7 @@ function cleanCites(text: string): string {
 
 async function main() {
   const yargsInstance: Argv<CliOptions> = yargs(Deno.args)
-    .scriptName("clean-cites.ts")
+    .scriptName("cites.ts")
     .positional("text", {
       type: "string",
       describe: "Text to clean cite blocks from",
@@ -33,7 +32,7 @@ async function main() {
   const argv: ArgumentsCamelCase<CliOptions> = await yargsInstance.parseAsync();
 
   let text: string;
-  // argv._ contains all positional args; we join them to support: clean-cites.ts "some text"
+  // argv._ contains all positional args; we join them to support: cites.ts "some text"
   if (argv._.length > 0) {
     text = argv._.join(" ");
   } else {
