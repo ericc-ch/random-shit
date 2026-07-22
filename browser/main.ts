@@ -5,13 +5,13 @@ export { chromium };
 
 const browserDir = import.meta.dirname!;
 
-/** Persistent Chrome user-data dir owned by this package. */
+/** Persistent Chromium user-data dir owned by this package. */
 export const profileDir = join(browserDir, "profile");
 
 /** Default dir for recorded HAR captures (gitignored — often contains auth). */
 export const harDir = join(browserDir, "hars");
 
-/** Prefer Helium, then Chrome/Chromium, then an explicit executable. */
+/** Prefer nix/env Chromium, then system Chromium/Chrome. */
 export const resolveExecutable = async () => {
   const fromEnv = Deno.env.get("BROWSER_EXECUTABLE") ??
     Deno.env.get("CHROMIUM_PATH") ??
@@ -20,11 +20,10 @@ export const resolveExecutable = async () => {
 
   for (
     const bin of [
-      "helium",
-      "google-chrome-stable",
-      "google-chrome",
       "chromium",
       "chromium-browser",
+      "google-chrome-stable",
+      "google-chrome",
     ]
   ) {
     const command = new Deno.Command("sh", {
@@ -67,8 +66,8 @@ export const launch = async (overrides: {
   return chromium.launchPersistentContext(profileDir, {
     headless: overrides.headless ?? false,
     viewport: null,
-    // System/env binary wins. Otherwise Patchright's installed Chromium.
-    // Set BROWSER_CHANNEL=chrome when you have real Google Chrome (stealthier).
+    // BROWSER_EXECUTABLE from `nix develop` (flake) wins. Else PATH Chromium,
+    // else BROWSER_CHANNEL / Patchright's bundled Chromium.
     ...(executablePath
       ? { executablePath }
       : channel

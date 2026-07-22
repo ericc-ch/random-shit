@@ -2,13 +2,16 @@
 
 /**
  * Headed session that records network traffic to a HAR file.
- * Use after logging in via browser:open. Ctrl+C flushes the HAR.
+ * Use after logging in via browser/open.ts. Ctrl+C flushes the HAR.
  *
- *   deno task browser:record -- https://example.com
- *   deno task browser:record -- --out ./capture.har --filter "*api*" https://example.com
+ *   deno run -A browser/record.ts https://example.com
+ *   deno run -A browser/record.ts --out ./capture.har --filter <glob> https://example.com
+ *
+ * urlFilter is a Playwright glob and must match the full URL.
+ * Use ** to cross `/` (a bare * does not) — for Instagram see README.
  *
  * Then summarize for client derivation:
- *   deno task browser:summarize -- ./browser/hars/….har
+ *   deno run -A browser/summarize.ts ./browser/hars/….har
  */
 
 import {
@@ -74,5 +77,5 @@ try {
 } finally {
   await context.close();
   console.log(`saved ${harPath}`);
-  console.log(`next: deno task browser:summarize -- ${harPath}`);
+  console.log(`next: deno run -A browser/summarize.ts ${harPath}`);
 }

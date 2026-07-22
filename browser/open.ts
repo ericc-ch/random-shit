@@ -4,7 +4,7 @@
  * Headed session with the persistent profile — log in, click around, Ctrl+C to exit.
  * Cookies survive for later headless / record runs.
  *
- *   deno task browser:open -- https://example.com
+ *   deno run -A browser/open.ts https://example.com
  */
 
 import { launch, pageOf, profileDir, untilInterrupt } from "./main.ts";

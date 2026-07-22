@@ -3,8 +3,8 @@
 /**
  * Summarize a HAR into API-shaped calls for deriving a lightweight HTTP client.
  *
- *   deno task browser:summarize -- ./browser/hars/….har
- *   deno task browser:summarize -- --json ./browser/hars/….har
+ *   deno run -A browser/summarize.ts ./browser/hars/….har
+ *   deno run -A browser/summarize.ts --json ./browser/hars/….har
  */
 
 import { summarizeHar } from "./main.ts";
@@ -13,7 +13,7 @@ const json = Deno.args.includes("--json");
 const harPath = Deno.args.find((a) => !a.startsWith("-"));
 
 if (!harPath) {
-  console.error("usage: deno task browser:summarize -- [--json] <file.har>");
+  console.error("usage: deno run -A browser/summarize.ts [--json] <file.har>");
   Deno.exit(1);
 }
 

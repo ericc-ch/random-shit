@@ -1,5 +1,5 @@
 {
-  description = "Development shell with Mermaid CLI";
+  description = "Dev shell: Mermaid CLI, R, Chromium for browser/";
 
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
@@ -26,7 +26,11 @@
             packages = with pkgs; [
               mermaid-cli
               R
+              chromium
             ];
+            shellHook = ''
+              export BROWSER_EXECUTABLE="${pkgs.chromium}/bin/chromium"
+            '';
           };
         }
       );
